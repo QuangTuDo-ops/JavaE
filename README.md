@@ -229,10 +229,155 @@ public class Department implements Serializable {
         }
         System.out.println("Employee Not Found");
     }
+}
+    
+package com.example;
+
+import java.io.*;
+import java.util.ArrayList;
+
+public class DataStorage {
+    private static final String EMPLOYEE_FILE = "employees.ser";
+    private static final String PAYROLL_FILE = "payrolls.ser";
+
+    public static void saveEmployees(ArrayList<Employee> employees) {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(EMPLOYEE_FILE))) {
+            oos.writeObject(employees);
+            System.out.println("Employee data saved successfully.");
+        } catch (IOException e) {
+            System.err.println("Error saving employee data: " + e.getMessage());
+        }
     }
+
+    public static ArrayList<Employee> loadEmployees() {
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(EMPLOYEE_FILE))) {
+            return (ArrayList<Employee>) ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println("Error loading employee data: " + e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+
+    public static void savePayrolls(ArrayList<Payroll> payrolls) {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(PAYROLL_FILE))) {
+            oos.writeObject(payrolls);
+            System.out.println("Payroll data saved successfully.");
+        } catch (IOException e) {
+            System.err.println("Error saving payroll data: " + e.getMessage());
+        }
+    }
+
+    public static ArrayList<Payroll> loadPayrolls() {
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(PAYROLL_FILE))) {
+            return (ArrayList<Payroll>) ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println("Error loading payroll data: " + e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+}
 
 package com.example;
 
-public class DataStorage {
+import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+
+import java.util.ArrayList;
+
+public class HRMApplication extends Application {
+    private ArrayList<Employee> employees;
+
+    @Override
+    public void start(Stage primaryStage) {
+        employees = DataStorage.loadEmployees();
+
+        VBox layout = new VBox(10);
+        layout.setPadding(new javafx.geometry.Insets(10));
+
+        Label label = new Label("HR Management System");
+        Button addEmployeeButton = new Button("Add Employee");
+        Button viewEmployeesButton = new Button("View Employees");
+        Button saveButton = new Button("Save Data");
+
+        addEmployeeButton.setOnAction(e -> showAddEmployeeDialog());
+        viewEmployeesButton.setOnAction(e -> showEmployeeList());
+        saveButton.setOnAction(e -> DataStorage.saveEmployees(employees));
+
+        layout.getChildren().addAll(label, addEmployeeButton, viewEmployeesButton, saveButton);
+
+        Scene scene = new Scene(layout, 400, 300);
+        primaryStage.setScene(scene);
+        primaryStage.setTitle("HR Management System");
+        primaryStage.show();
+    }
+
+    private void showAddEmployeeDialog() {
+        Stage dialog = new Stage();
+        dialog.setTitle("Add Employee");
+
+        VBox dialogLayout = new VBox(10);
+        dialogLayout.setPadding(new javafx.geometry.Insets(10));
+
+        TextField idField = new TextField();
+        idField.setPromptText("Employee ID");
+        TextField firstNameField = new TextField();
+        firstNameField.setPromptText("First Name");
+        TextField lastNameField = new TextField();
+        lastNameField.setPromptText("Last Name");
+        TextField departmentField = new TextField();
+        departmentField.setPromptText("Department");
+        TextField salaryField = new TextField();
+        salaryField.setPromptText("Hourly Rate");
+
+        Button saveButton = new Button("Save");
+        saveButton.setOnAction(e -> {
+            try {
+                int id = Integer.parseInt(idField.getText());
+                String firstName = firstNameField.getText();
+                String lastName = lastNameField.getText();
+                String department = departmentField.getText();
+                double salary = Double.parseDouble(salaryField.getText());
+
+                Employee employee = new Employee(id, firstName, lastName, department, salary);
+                employees.add(employee);
+                dialog.close();
+                Alert alert = new Alert(Alert.AlertType.INFORMATION, "Employee added successfully!");
+                alert.showAndWait();
+            } catch (NumberFormatException ex) {
+                Alert alert = new Alert(Alert.AlertType.ERROR, "Invalid input. Please try again.");
+                alert.showAndWait();
+            }
+        });
+
+        dialogLayout.getChildren().addAll(idField, firstNameField, lastNameField, departmentField, salaryField, saveButton);
+
+        Scene dialogScene = new Scene(dialogLayout, 300, 200);
+        dialog.setScene(dialogScene);
+        dialog.show();
+    }
+
+    private void showEmployeeList() {
+        Stage listStage = new Stage();
+        listStage.setTitle("Employee List");
+
+        VBox listLayout = new VBox(10);
+        listLayout.setPadding(new javafx.geometry.Insets(10));
+
+        for (Employee employee : employees) {
+            Label employeeLabel = new Label(employee.toString());
+            listLayout.getChildren().add(employeeLabel);
+        }
+
+        Scene listScene = new Scene(listLayout, 400, 400);
+        listStage.setScene(listScene);
+        listStage.show();
+    }
+
+    public static void main(String[] args) {
+        launch(args);
+    }
 }
 
